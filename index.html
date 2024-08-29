@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Content Loader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #content {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">Loading...</div>
+
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        async function loadContent() {
+            const url = getQueryParam('web');
+            const contentDiv = document.getElementById('content');
+
+            if (!url) {
+                contentDiv.innerHTML = '<p>No URL parameter provided.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    const text = await response.text();
+                    contentDiv.innerHTML = `<pre>${text}</pre>`;
+                } else {
+                    contentDiv.innerHTML = '<p>Failed to load content. Please check the URL.</p>';
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<p>Error occurred: ${error.message}</p>`;
+            }
+        }
+
+        loadContent();
+    </script>
+</body>
+</html>
