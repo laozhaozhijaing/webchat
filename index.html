@@ -2,69 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>从URL加载HTML</title>
+    <title>从URL参数运行HTML代码</title>
     <style>
-        #progressBar {
-            width: 100%;
-            height: 20px;
-            background-color: #ddd;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            overflow: hidden;
-        }
-        #progress {
-            width: 0%;
-            height: 100%;
-            background-color: #4CAF50;
-            text-align: center;
-            line-height: 20px;
-            color: white;
-        }
         #resultFrame {
             width: 100%;
-            height: 90%;
+            height: 500px;
             border: none;
-            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-<div id="progressBar">
-    <div id="progress" id="progressValue">0%</div>
-</div>
-
 <iframe id="resultFrame" name="resultFrame"></iframe>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const params = new URLSearchParams(window.location.search);
-        const webURL = params.get('web') || '';
+    // 获取URL中的查询参数
+    function getQueryParams() {
+        const params = {};
+        const queryString = window.location.search.substring(1);
+        const vars = queryString.split('&');
+        vars.forEach((pair) => {
+            const [key, value] = pair.split('=');
+            params[key] = decodeURIComponent(value);
+        });
+        return params;
+    }
 
-        const progressBar = document.getElementById('progressValue');
-        const iframe = document.getElementById('resultFrame');
+    // 从指定URL获取HTML内容并在iframe中显示
+    function loadHTMLFromURL(url) {
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络响应不正确');
+                }
+                return response.text();
+            })
+            .then(html => {
+                const iframe = document.getElementById('resultFrame');
+                iframe.contentDocument.body.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('从URL获取HTML内容时出错:', error);
+                alert('从URL获取HTML内容时出错，请检查URL是否有效');
+            });
+    }
+
+    // 当页面加载完成时执行
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = getQueryParams();
+        const webURL = params.web || '';
 
         if (webURL) {
-            fetch(webURL, {mode: 'cors'})
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok.');
-                    }
-                    return response.text();
-                })
-                .then(html => {
-                    progressBar.style.width = '100%';
-                    progressBar.textContent = '100%';
-                    iframe.srcdoc = html;
-                })
-                .catch(error => {
-                    console.error('There has been a problem with your fetch operation:', error);
-                    progressBar.style.backgroundColor = 'red'; // Change color to indicate error
-                });
-        } else {
-            console.log('No web URL parameter provided.');
+            loadHTMLFromURL(webURL);
         }
     });
 </script>
