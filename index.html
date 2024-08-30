@@ -105,19 +105,6 @@
             background: #007bff;
             transition: width 0.1s ease;
         }
-        #fullscreenContent {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #fff;
-            z-index: 1000;
-            overflow: auto;
-            box-sizing: border-box;
-            padding: 20px;
-        }
     </style>
 </head>
 <body>
@@ -151,26 +138,11 @@
         <button onclick="togglePlayer()">收缩/展开</button>
     </div>
 
-    <div id="fullscreenContent"></div>
-
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
         function loadJSONContent(url) {
             fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('网络响应不成功');
-                    }
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        return response.json();
-                    } else {
-                        return response.text().then(text => {
-                            displayFullscreenContent(text);
-                            throw new Error('提供的内容不是 JSON 文件');
-                        });
-                    }
-                })
+                .then(response => response.json())
                 .then(data => {
                     renderContent(data);
                     const fileName = url.substring(url.lastIndexOf('/') + 1);
@@ -179,7 +151,7 @@
                 })
                 .catch(error => {
                     console.error('加载 JSON 时出错：', error);
-                    alert('加载错误：' + error.message);
+                    alert('加载错误，请确保您提供了一个有效的 JSON 文件 URL。');
                 });
         }
 
@@ -243,18 +215,12 @@
             progressBar.style.width = scrolled + '%';
         }
 
-        function displayFullscreenContent(htmlContent) {
-            const fullscreenDiv = document.getElementById('fullscreenContent');
-            fullscreenDiv.innerHTML = htmlContent;
-            fullscreenDiv.style.display = 'block';
-        }
-
         // 检查 URL 参数并加载 JSON 文件
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
-            const fileUrl = urlParams.get('web');
-            if (fileUrl) {
-                loadJSONContent(fileUrl);
+            const jsonUrl = urlParams.get('web');
+            if (jsonUrl) {
+                loadJSONContent(jsonUrl);
             }
         }
 
