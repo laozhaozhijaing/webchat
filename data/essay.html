@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>富文本 JSON 渲染器</title>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .header-bar {
+            background: #333;
+            color: #fff;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 20px;
+            height: 80px;
+            transition: height 0.3s ease, padding 0.3s ease, font-size 0.3s ease;
+            font-size: 24px;
+        }
+        .header-bar.shrink {
+            height: 50px;
+            padding: 10px;
+            font-size: 18px;
+        }
+        .controls {
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 600px;
+            text-align: center;
+            box-sizing: border-box;
+            margin-top: 100px; /* Ensure it's below the header */
+        }
+        .controls input,
+        .controls button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #renderedContent {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            min-height: 400px;
+            max-width: 800px;
+            box-sizing: border-box;
+            margin-top: 20px; /* Adjusted to account for progress bar */
+        }
+        #backToTop {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        #musicPlayer {
+            position: fixed;
+            bottom: 60px; /* 设置播放器距离底部的位置 */
+            right: 20px;
+            background: #eee;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 300px;
+            transition: transform 0.3s ease, width 0.3s ease, bottom 0.3s ease;
+        }
+        #musicPlayer.collapsed {
+            transform: translateX(-100%); /* 完全移出视图 */
+            width: 0;
+            padding: 0;
+            bottom: 20px; /* 折叠时调整到较高的位置 */
+        }
+        #musicPlayer select,
+        #musicPlayer button {
+            margin: 5px 0;
+        }
+        /* 横版阅读进度条样式 */
+        #progressBarContainer {
+            position: fixed;
+            top: 80px; /* 顶栏下方 */
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: #eee;
+            z-index: 1000;
+        }
+        #progressBar {
+            height: 100%;
+            width: 0;
+            background: #007bff;
+            transition: width 0.1s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar" id="headerBar">
+        <!-- 文件名将作为标题显示在这里 -->
+    </div>
+
+    <div id="progressBarContainer">
+        <div id="progressBar"></div>
+    </div>
+
+    <div class="controls">
+    </div>
+
+    <div id="renderedContent">
+        <!-- 富文本内容将显示在这里 -->
+    </div>
+
+    <button id="backToTop" onclick="scrollToTop()">返回顶部</button>
+
+    <div id="musicPlayer">
+        <select id="playlist">
+            <option value="song1.mp3">歌曲 1</option>
+            <option value="song2.mp3">歌曲 2</option>
+        </select>
+        <audio id="audioPlayer" controls></audio>
+        <button onclick="togglePlayer()">收缩/展开</button>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+        function loadJSONContent(url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    renderContent(data);
+                    const fileName = url.substring(url.lastIndexOf('/') + 1);
+                    const title = fileName.substring(0, fileName.lastIndexOf('.'));
+                    document.getElementById('headerBar').textContent = title;
+                })
+                .catch(error => {
+                    console.error('加载 JSON 时出错：', error);
+                    alert('加载错误，请确保您提供了一个有效的 JSON 文件 URL。');
+                });
+        }
+
+        function openFileDialog() {
+            document.getElementById('jsonFileInput').click();
+        }
+
+        function renderContent(data) {
+            const contentDiv = document.getElementById('renderedContent');
+            contentDiv.innerHTML = ''; // 清除之前的内容
+
+            if (data && data.ops) {
+                const quill = new Quill(contentDiv, {
+                    theme: 'snow',
+                    readOnly: true,
+                    modules: {
+                        toolbar: false
+                    }
+                });
+
+                quill.setContents(data);
+            } else {
+                contentDiv.innerHTML = '无内容可显示。';
+            }
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.onscroll = function() {
+            const headerBar = document.getElementById('headerBar');
+            const backToTopBtn = document.getElementById('backToTop');
+            if (window.scrollY > 200) {
+                backToTopBtn.style.display = 'block';
+                headerBar.classList.add('shrink');
+            } else {
+                backToTopBtn.style.display = 'none';
+                headerBar.classList.remove('shrink');
+            }
+            updateProgressBar();
+        };
+
+        function togglePlayer() {
+            const player = document.getElementById('musicPlayer');
+            player.classList.toggle('collapsed');
+        }
+
+        document.getElementById('playlist').onchange = function() {
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = this.value;
+            audioPlayer.play();
+        };
+
+        function updateProgressBar() {
+            const progressBar = document.getElementById('progressBar');
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = document.documentElement.clientHeight;
+            const scrollTop = document.documentElement.scrollTop;
+            const scrolled = (scrollTop / (scrollHeight - clientHeight)) * 100;
+            progressBar.style.width = scrolled + '%';
+        }
+
+        // 检查 URL 参数并加载 JSON 文件
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const jsonUrl = urlParams.get('web');
+            if (jsonUrl) {
+                loadJSONContent(jsonUrl);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
