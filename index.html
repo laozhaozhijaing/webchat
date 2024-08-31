@@ -116,7 +116,7 @@
             try {
                 const response = await fetch('https://api.github.com/repos/laozhaozhijaing/webchat/contents/article');
                 if (!response.ok) {
-                    throw new Error('网络响应不正常');
+                    throw new Error('网络响应不正常, 使用这个加速链接: <a href="https://webproxy.911proxy.com/request?area=US&u=https://laozhaozhijaing.github.io/webchat/" target="_blank">点击这里</a>');
                 }
                 const data = await response.json();
                 allFiles = data; // 保存所有文件数据
