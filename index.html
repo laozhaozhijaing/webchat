@@ -114,7 +114,7 @@
 
         async function fetchFileList() {
             try {
-                const response = await fetch('https://api.github.com/repos/laozhaozhijaing/webchat/contents/article?ref=main');
+                const response = await fetch('https://webproxy.911proxy.com/request?area=US&u=https://api.github.com/repos/laozhaozhijaing/webchat/contents/article');
                 if (!response.ok) {
                     throw new Error('网络响应不正常');
                 }
